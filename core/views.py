@@ -6,6 +6,7 @@ from django.http import HttpResponse
 from .models import Profile
 from django.contrib.auth.decorators import login_required
 
+
 @login_required(login_url = 'signin/')
 def index(request):
     return render(request , 'index.html')
@@ -34,14 +35,13 @@ def signup(request):
                 )
                 user.save()
 
-                # log user in and direct to settings page
-
-                #create a profile object for the new user
+                user_login = auth.authenticate(username = username , password = password)
+                auth.login(request , user_login)
 
                 user_model = User.objects.get(username=user.username)
-                new_profile = Profile.objects.create(user=user_model , id_user = user_model.id)
+                new_profile = Profile.objects.create(user=user_model )
                 new_profile.save()
-                return redirect('signup')
+                return redirect('settings')
         else:
             messages.info(request , "Password Not Matching")
             return redirect('signup')
@@ -69,3 +69,25 @@ def signin(request):
 def logout(request):
     auth.logout(request)
     return redirect('signin')
+
+
+@login_required(login_url = 'signin/')
+def settings(request):
+    try:
+        user_profile = Profile.objects.get(user=request.user)
+    except Profile.DoesNotExist:
+        user_profile = Profile.objects.create(user=request.user)
+
+    if request.method == 'POST':
+        image = request.FILES.get('image', user_profile.profile_img)
+        bio = request.POST.get('bio', user_profile.bio)
+        location = request.POST.get('location', user_profile.location)
+
+        user_profile.profile_img = image
+        user_profile.bio = bio
+        user_profile.location = location
+        user_profile.save()
+        
+        return redirect('/')
+    
+    return render(request, 'setting.html', {'user_profile': user_profile})
