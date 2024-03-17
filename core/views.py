@@ -11,7 +11,9 @@ from django.http import HttpResponse
 def index(request):
     user_object = User.objects.get(username = request.user.username)
     user_profile = Profile.objects.get(user = user_object)
-    return render(request , 'index.html' , {'user_profile': user_profile})
+
+    post = Post.objects.all()
+    return render(request , 'index.html' , {'user_profile': user_profile , 'post' : post})
 
 def upload(request):
     if request.method == 'POST':
