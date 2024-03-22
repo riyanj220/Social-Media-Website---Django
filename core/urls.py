@@ -8,5 +8,6 @@ urlpatterns = [
     path('signin/' , views.signin , name = 'signin'),
     path('logout/' , views.logout , name = 'logout'), 
     path('upload/' , views.upload , name = 'upload'), 
+    path('profile/<str:pk>/' , views.profile , name = 'profile'), 
     path('like-post/' , views.like_post , name = 'like-post'), 
 ]
