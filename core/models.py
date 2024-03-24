@@ -6,7 +6,7 @@ from datetime import datetime
 User = get_user_model()
 
 class Profile(models.Model):
-    user = models.OneToOneField(User, on_delete = models.CASCADE)
+    user = models.OneToOneField(User, on_delete = models.CASCADE)   
     bio = models.TextField(blank = True )
     profile_img = models.ImageField(upload_to = 'profile_images' ,  default = 'blank_profile_picture.png')
     location =  models.CharField(max_length = 100 , blank = True)
@@ -31,3 +31,10 @@ class LikePost(models.Model):
 
     def __str__(self):
         return self.username
+    
+class FollowersCount(models.Model):
+    follower = models.CharField(max_length = 100)
+    user = models.CharField(max_length = 100)
+
+    def __str__(self):
+        return self.user
