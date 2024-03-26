@@ -28,6 +28,7 @@ def index(request):
 
     return render(request , 'index.html' , {'user_profile': user_profile , 'post' : feed_list})
 
+@login_required(login_url = 'signin/')
 def upload(request):
     if request.method == 'POST':
         user = request.user.username
@@ -39,6 +40,19 @@ def upload(request):
         return redirect('/')
     else:
         return redirect('/')
+    
+@login_required(login_url = 'signin/')
+def search(request):
+    user_object = User.objects.get(username = request.user.username)
+    user_profile_pic = Profile.objects.get(user = user_object)
+
+    user_profile = None
+    if request.method == 'POST':
+        username = request.POST.get('username') 
+        users = Profile.objects.filter(user__username__icontains=username)
+
+    return render(request, 'search.html', {'users': users, 'user_profile': user_profile, 'user_profile_pic': user_profile_pic})
+
 
 @login_required(login_url = 'signin/')
 def like_post(request):
