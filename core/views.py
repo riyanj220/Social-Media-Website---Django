@@ -6,6 +6,7 @@ from .models import Profile ,Post ,LikePost ,FollowersCount
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from itertools import chain
+from random import shuffle
 
 @login_required(login_url = 'signin/')
 def index(request):
@@ -26,7 +27,19 @@ def index(request):
 
     feed_list = list(chain(*feed))
 
-    return render(request , 'index.html' , {'user_profile': user_profile , 'post' : feed_list})
+    # for suggestions
+
+    active_user_following = FollowersCount.objects.filter(follower=request.user.username).exclude(user=request.user.username).values_list('user', flat=True)
+    active_user_following = list(active_user_following) 
+    active_user_following.append(request.user.username)  
+
+    suggested_profiles = Profile.objects.exclude(user__username__in=active_user_following)
+
+    suggested_profiles = list(suggested_profiles)
+    shuffle(suggested_profiles)
+    suggested_profiles = suggested_profiles[:4]
+
+    return render(request , 'index.html' , {'user_profile': user_profile , 'post' : feed_list,'suggested_profiles': suggested_profiles})
 
 @login_required(login_url = 'signin/')
 def upload(request):
@@ -123,6 +136,13 @@ def follow(request):
             new_follower = FollowersCount.objects.create(follower = follower, user = user)
             new_follower.save()
             return redirect('/profile/'+user)
+    
+    elif request.method == 'GET':
+        follower = request.GET.get('follower')
+        user = request.GET.get('user')
+
+        FollowersCount.objects.create(follower=follower, user=user)
+        return redirect('/')
     else:
         return redirect('/')
 
