@@ -2,11 +2,13 @@ from django.shortcuts import render ,redirect
 from django.contrib.auth.models import User 
 from django.contrib import auth
 from django.contrib import messages
-from .models import Profile ,Post ,LikePost ,FollowersCount
+from .models import Profile ,Post ,LikePost ,FollowersCount ,Notification
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from itertools import chain
 from random import shuffle
+from django.http import JsonResponse
+from django.utils.dateformat import format
 
 @login_required(login_url = 'signin/')
 def index(request):
@@ -74,22 +76,70 @@ def like_post(request):
     
     post = Post.objects.get(id = post_id)
 
-    like_filter = LikePost.objects.filter(post_id = post.id , username = username).first()
-
-    if like_filter == None:
-        new_like = LikePost.objects.create(post_id = post.id, username = username)
-        new_like.save()
-        post.no_of_likes = post.no_of_likes +1
-        post.save()
-        
-        return redirect('/')
-    
+    if isinstance(post.user, str):
+        post_owner_username = post.user
     else:
-        like_filter.delete()
-        post.no_of_likes = post.no_of_likes -1
-        post.save()
+        post_owner_username = post.user.username
+
+    if username != post_owner_username:
+        like_filter = LikePost.objects.filter(post_id=post.id, username=username).first()
+
+        if like_filter is None:
+            new_like = LikePost.objects.create(post_id=post.id, username=username)
+            new_like.save()
+            post.no_of_likes += 1
+            post.save()
+            
+            recipient_user = User.objects.get(username=post.user)
+            sender_profile = Profile.objects.get(user=request.user)
+            Notification.objects.create(sender=username,sender_profile=sender_profile, recipient=recipient_user, post=post)
+            
+            return redirect('/')
+        else:
+            like_filter.delete()
+            post.no_of_likes -= 1
+            post.save()
+
+            recipient_user = User.objects.get(username=post.user)
+            
+            Notification.objects.filter(sender=username, recipient=recipient_user, post=post).delete()
+    else:
+        like_filter = LikePost.objects.filter(post_id=post.id, username=username).first()
+
+        if like_filter is None:
+            new_like = LikePost.objects.create(post_id=post.id, username=username)
+            new_like.save()
+            post.no_of_likes += 1
+            post.save()
+        else:
+            like_filter.delete()
+            post.no_of_likes -= 1
+            post.save()
     
-        return redirect('/')
+    return redirect('/')
+
+def notifications(request):
+    user_notifications = Notification.objects.filter(recipient=request.user).order_by('-date_time')[:4]
+    notifications_data = []
+    
+    for notification in user_notifications:
+        sender_profile = notification.sender_profile
+        sender_username = notification.sender
+        
+        if sender_profile:
+            profile_picture = sender_profile.profile_img.url if sender_profile.profile_img else None
+        else:
+            profile_picture = None
+
+        formatted_date_time = notification.date_time.strftime('%B %d, %Y, %I:%M %p')
+        
+        notifications_data.append({
+            'sender': sender_username,
+            'profile_picture': profile_picture,
+            'date_time': formatted_date_time
+        })
+        
+    return JsonResponse({'notifications': notifications_data})
 
 @login_required(login_url = 'signin/')
 def profile(request , pk):
@@ -145,8 +195,7 @@ def follow(request):
         return redirect('/')
     else:
         return redirect('/')
-
-
+    
 def signup(request):
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -227,5 +276,3 @@ def settings(request):
         return redirect('/')
     
     return render(request, 'setting.html', {'user_profile': user_profile})
-
-
