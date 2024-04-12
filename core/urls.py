@@ -12,5 +12,6 @@ urlpatterns = [
     path('search' , views.search , name = 'search'), 
     path('profile/<str:pk>/' , views.profile , name = 'profile'), 
     path('like-post/' , views.like_post , name = 'like-post'), 
-    path('notifications' , views.notifications , name = 'notifications') 
+    path('notifications' , views.notifications , name = 'notifications') ,
+    path('post/<uuid:post_id>/delete/', views.delete_post, name='delete_post'),
 ]

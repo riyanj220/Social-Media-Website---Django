@@ -8,7 +8,8 @@ from django.http import HttpResponse
 from itertools import chain
 from random import shuffle
 from django.http import JsonResponse
-from django.utils.dateformat import format
+from django.shortcuts import get_object_or_404
+from django.http import HttpResponseForbidden,HttpResponseNotAllowed
 
 @login_required(login_url = 'signin/')
 def index(request):
@@ -53,8 +54,13 @@ def upload(request):
         new_post = Post.objects.create(user = user , image = image, caption = caption)
         new_post.save()
         return redirect('/')
-    else:
+    
+def delete_post(request,post_id):
+    post = get_object_or_404(Post, pk=post_id)
+    if request.method == 'POST':
+        post.delete()
         return redirect('/')
+
     
 @login_required(login_url = 'signin/')
 def search(request):
