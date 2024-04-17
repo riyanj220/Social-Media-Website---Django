@@ -9,7 +9,6 @@ from itertools import chain
 from random import shuffle
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from django.http import HttpResponseForbidden,HttpResponseNotAllowed
 
 @login_required(login_url = 'signin/')
 def index(request):
